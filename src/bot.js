@@ -1,5 +1,5 @@
 const config = require('./configs/config.json' );
-const { Client, GatewayIntentBits } = require('discord.js');
+const { Client, GatewayIntentBits, ActivityType } = require('discord.js');
 const commandHandler = require('./handlers/commandHandler');
 const modalHandler = require('./handlers/modalHandler');
 
@@ -14,6 +14,10 @@ const client = new Client({
 
 client.on('ready', async () => {
     console.log(`Logged in as ${client.user.tag}!`);
+    client.user.setPresence({
+        activities: [{ name: 'Every Launch. Ever.', type: ActivityType.Watching }],
+        status: 'dnd'
+    });
     await commandHandler.registerCommands(client);
 });
 
