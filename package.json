@@ -1,6 +1,16 @@
 {
+  "name": "tradewise",
+  "version": "1.0.0",
   "dependencies": {
     "discord.js": "^14.14.1",
     "isomorphic-fetch": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "module": "./src/bot.ts",
+  "type": "module",
+  "peerDependencies": {
+    "typescript": "^5.0.0"
   }
 }

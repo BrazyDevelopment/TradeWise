@@ -1,6 +1,6 @@
-const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
+import { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, CommandInteraction, SlashCommandBuilder } from "discord.js";
 
-const execute = async (interaction) => {
+const execute = async (interaction: CommandInteraction) => {
     const modal = new ModalBuilder()
         .setCustomId('tokenSecurityModal')
         .setTitle('Check the security of a token with a CA.');
@@ -10,7 +10,7 @@ const execute = async (interaction) => {
         .setLabel('Enter The Chain ID or Name')
         .setPlaceholder(`e.g: 8453' or 'Base'`)
         .setStyle(TextInputStyle.Short)
-        .setMaxLength(10) //harmony network has 10 digits (highest i can think of)
+        .setMaxLength(10) 
         .setRequired(true);
 
     const contractAddressInput = new TextInputBuilder()
@@ -23,12 +23,13 @@ const execute = async (interaction) => {
     const firstActionRow = new ActionRowBuilder().addComponents(chainIdInput);
     const secondActionRow = new ActionRowBuilder().addComponents(contractAddressInput);
 
+    // @ts-expect-error im not sure
     modal.addComponents(firstActionRow, secondActionRow);
+    
     await interaction.showModal(modal);
 };
 
-module.exports = {
-    name: 'tokensecurity',
-    description: 'Check the security of a token',
+export default {
+    data: new SlashCommandBuilder().setName("tokensecurity").setDescription("Check the security of a token."),
     execute
 };

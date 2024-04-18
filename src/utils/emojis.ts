@@ -4,4 +4,4 @@ const emojis = {
     highrisk: ":no_entry:"
 }
 
-module.exports = emojis;
+export default emojis;

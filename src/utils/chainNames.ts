@@ -21,4 +21,4 @@ const chainNames = {
     '900': 'Solana',
 };
 
-module.exports = chainNames;
+export default chainNames;
