@@ -1,14 +1,20 @@
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandBuilder} = require('discord.js');
-const fetch = require('isomorphic-fetch');
-const emojis = require('../utils/emojis');
-const chainNames = require ('../utils/chainNames');
-const config = require ('../configs/config.json');
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandBuilder } from 'discord.js';
+import fetch from 'isomorphic-fetch';
+import emojis from '../utils/emojis';
+import chainNames from '../utils/chainNames';
 
-const execute = async (interaction) => {
-    let chainIdOrName = interaction.fields.getTextInputValue('tokenSecurityChain');
-    chainIdOrName = chainIdOrName.toLowerCase(); // Convert input to lowercase for case-insensitive comparison
-    const contractAddress = interaction.fields.getTextInputValue('tokenSecurityContent');
-    let chainId = null;
+interface Interaction {
+    fields: {
+        getTextInputValue: (name: string) => string;
+    };
+    reply: (message: string | { embeds: EmbedBuilder[], components: ActionRowBuilder[] }) => Promise<void>;
+}
+
+const execute = async (interaction: Interaction): Promise<void> => {
+    let chainIdOrName: string = interaction.fields.getTextInputValue('tokenSecurityChain');
+    chainIdOrName = chainIdOrName.toLowerCase();
+    const contractAddress: string = interaction.fields.getTextInputValue('tokenSecurityContent');
+    let chainId: string | null = null;
 
     // Check if the provided input matches a chain ID
     if (chainIdOrName in chainNames) {
@@ -16,6 +22,7 @@ const execute = async (interaction) => {
     } else {
         // Check if the provided input matches a chain name
         for (const id in chainNames) {
+            // @ts-expect-error fine
             if (chainNames[id].toLowerCase() === chainIdOrName) {
                 chainId = id;
                 break;
@@ -27,11 +34,16 @@ const execute = async (interaction) => {
         await interaction.reply('Invalid chain ID or name.');
         return;
     }
-    
-    const chainNameToLowerCase = chainNames[chainId].toLowerCase();
+    // @ts-expect-error x
+    const chainNameToLowerCase: string = chainNames[chainId].toLowerCase();
 
-
-    const options = {
+    const options: {
+        method: string;
+        headers: {
+            accept: string;
+            // Authorization: string;
+        };
+    } = {
         method: 'GET',
         headers: {
             accept: '*/*',
@@ -42,7 +54,7 @@ const execute = async (interaction) => {
     try {
         const response = await fetch(`https://api.gopluslabs.io/api/v1/token_security/${chainId}?contract_addresses=${contractAddress}`, options);
         const tokenSecurityData = await response.json();
-        const responseComment = tokenSecurityData.message;
+        const responseComment: string = tokenSecurityData.message;
         console.log("API Request returned code: " + responseComment);
         console.log(tokenSecurityData)
 
@@ -50,21 +62,21 @@ const execute = async (interaction) => {
             await interaction.reply(responseComment);
             return;
         }
-        const resultsData = Object.entries(tokenSecurityData.result)[0];
+        const resultsData: [string, any] = Object.entries(tokenSecurityData.result)[0];
 
-
-        const CA = resultsData[0]; // Contract address from api result (I could probably add user input validation from ${contractAddress})
+        const CA: string = resultsData[0]; // Contract address from api result (I could probably add user input validation from ${contractAddress})
 
         console.log(resultsData[1].dex)
 
-        const embed = new EmbedBuilder()
-        .setTitle(`Token Security for ${resultsData[1].token_name}`)
-        .setDescription(`**On Chain ID:** \`${chainId}\`\n**Chain:** ${chainNames[chainId]}`)
-        .setColor('Blurple')
-        .addFields(
-            { name: 'Contract Security For:', value: `\`${CA}\`` },
-            { name: 'Open Source:', value: resultsData[1].is_open_source === '1' ? `Yes ${emojis.ok}` : `No ${emojis.warning}`, inline: true },
-        );
+        const embed: EmbedBuilder = new EmbedBuilder()
+            .setTitle(`Token Security for ${resultsData[1].token_name}`)
+            // @ts-expect-error x
+            .setDescription(`**On Chain ID:** \`${chainId}\`\n**Chain:** ${chainNames[chainId]}`)
+            .setColor('Blurple')
+            .addFields(
+                { name: 'Contract Security For:', value: `\`${CA}\`` },
+                { name: 'Open Source:', value: resultsData[1].is_open_source === '1' ? `Yes ${emojis.ok}` : `No ${emojis.warning}`, inline: true },
+            );
 
         // Check if the contract is open source
         if (resultsData[1].is_open_source === '1') {
@@ -89,10 +101,10 @@ const execute = async (interaction) => {
                 { name: 'Blacklist:', value: resultsData[1].is_blacklisted === '1' ? `Yes ${emojis.highrisk}` : `No ${emojis.ok}` || 'Unknown', inline: true },
                 { name: 'Trade Cooldown:', value: resultsData[1].trading_cooldown === '1' ? `Yes ${emojis.warning}` : `No ${emojis.ok}` || 'Unknown', inline: true },
                 { name: 'Whitelist:', value: resultsData[1].is_whitelisted === '1' ? `Yes ${emojis.warning}` : `No ${emojis.ok}` || 'Unknown', inline: true },
-                { name: 'Buy Tax:', value: resultsData[1].buy_tax === '0' || resultsData[1].buy_tax === '' ? `0% ${emojis.ok}` : `${resultsData[1].buy_tax}% ${emojis.warning}` || 'Unknown', inline: true},
-                { name: 'Sell Tax:', value: resultsData[1].sell_tax === '0' || resultsData[1].sell_tax === '' ? `0% ${emojis.ok}` : `${resultsData[1].sell_tax}% ${emojis.warning}` || 'Unknown', inline: true},
+                { name: 'Buy Tax:', value: resultsData[1].buy_tax === '0' || resultsData[1].buy_tax === '' ? `0% ${emojis.ok}` : `${resultsData[1].buy_tax}% ${emojis.warning}` || 'Unknown', inline: true },
+                { name: 'Sell Tax:', value: resultsData[1].sell_tax === '0' || resultsData[1].sell_tax === '' ? `0% ${emojis.ok}` : `${resultsData[1].sell_tax}% ${emojis.warning}` || 'Unknown', inline: true },
                 // Add other trading security fields from https://docs.gopluslabs.io/reference/response-details
-                
+
                 { name: '\u200B', value: '**Info Security**' }, // Spacer between sections
                 { name: 'Token Name:', value: resultsData[1].token_name || 'Unknown', inline: true },
                 { name: 'Token Symbol:', value: resultsData[1].token_symbol || 'Unknown', inline: true },
@@ -107,34 +119,36 @@ const execute = async (interaction) => {
             //     )
             // }
 
-                // Add other info security fields from https://docs.gopluslabs.io/reference/response-details
+            // Add other info security fields from https://docs.gopluslabs.io/reference/response-details
         };
 
-        
+
         // If ETH or WETH based chain like Ethereum or Base
-        const tradeWithSigma = new ButtonBuilder()
-			.setLabel('Trade On Sigma')
-            .setURL(`https://t.me/Sigma_buyBot?start=x${config.SIGMA_BOT_REFERRAL}-${contractAddress}`)
-			.setStyle(ButtonStyle.Link);
+        const tradeWithSigma: ButtonBuilder = new ButtonBuilder()
+            .setLabel('Trade On Sigma')
+            .setURL(`https://t.me/Sigma_buyBot?start=x${Bun.env.SIGMA_BOT_REFERRAL}-${contractAddress}`)
+            .setStyle(ButtonStyle.Link);
 
         // View on DexScreener
-		const viewOnDex = new ButtonBuilder()
-			.setLabel('View Chart')
+        const viewOnDex: ButtonBuilder = new ButtonBuilder()
+            .setLabel('View Chart')
             .setURL(`https://dexscreener.com/${chainNameToLowerCase}/${contractAddress}`)
-			.setStyle(ButtonStyle.Link);
+            .setStyle(ButtonStyle.Link);
 
-		const row = new ActionRowBuilder()
-			.addComponents(tradeWithSigma, viewOnDex);
-        
+        const row: ActionRowBuilder = new ActionRowBuilder()
+            .addComponents(tradeWithSigma, viewOnDex);
+
         await interaction.reply({ embeds: [embed], components: [row] });
-        
+
     } catch (error) {
         console.error(error);
         await interaction.reply('An error occurred while fetching the token security data.');
     }
 };
 
-module.exports = {
+const tokenSecurityModal = {
     customId: 'tokenSecurityModal',
     execute
 };
+
+export default tokenSecurityModal;
