@@ -1,4 +1,5 @@
 import {
+  AttachmentBuilder,
   CommandInteraction,
   EmbedBuilder,
   SlashCommandBuilder,
@@ -25,6 +26,7 @@ export default {
         .setRequired(true)
     ),
   execute: async (interaction: CommandInteraction) => {
+    try {
     const a = interaction.options.get("address")?.value?.toString();
     const chain = interaction.options.get("chain")?.value?.toString();
 
@@ -74,81 +76,14 @@ export default {
         })
       );
 
-    const fields: { name: string; value: string; inline: boolean }[] =
-      new Array();
+    const fields = [...response.result, ...response2.result, ...response3.result];
+    const jsonFile = new AttachmentBuilder(Buffer.from(JSON.stringify(fields)), {
+      name: 'approvalHistory.json'
+    });
 
-    if (response.result) {
-      //console.log(response)
-
-      for (const [key, value] of Object.entries(response.result)) {
-        const fieldValue = value === "1" || 1 ? "✅ Yes" : "❌ No";
-
-        fields.push({
-          name: key.charAt(0).toUpperCase() + key.slice(1).replaceAll("_", " "),
-          value: fieldValue,
-          inline: true,
-        });
-      }
-
-      if (
-        response.result &&
-        response.result.risky_approval &&
-        response.result.risky_approval.risk
-      ) {
-        fields.push({
-          name: "Risk",
-          value: `${response.result.risky_approval.risk}`,
-          inline: false,
-        });
-      }
-      if (response2.result) {
-        //console.log(response);
-        const fields: { name: string; value: string; inline: boolean }[] =
-          new Array();
-
-        for (const [key, value] of Object.entries(response2.result)) {
-          const fieldValue = value === "1" || 1 ? "✅ Yes" : "❌ No";
-
-          fields.push({
-            name:
-              key.charAt(0).toUpperCase() + key.slice(1).replaceAll("_", " "),
-            value: fieldValue,
-            inline: true,
-          });
-        }
-      }
-      if (response3.result) {
-        //console.log(response);
-        const fields: { name: string; value: string; inline: boolean }[] =
-          new Array();
-
-        for (const [key, value] of Object.entries(response3.result)) {
-          const fieldValue = value === "1" || 1 ? "✅ Yes" : "❌ No";
-
-          fields.push({
-            name:
-              key.charAt(0).toUpperCase() + key.slice(1).replaceAll("_", " "),
-            value: fieldValue,
-            inline: true,
-          });
-        }
-      }
-
-      const embed = new EmbedBuilder()
-        .setTitle("Contract Approval Security")
-        .setDescription(
-          `**Network**: ${
-            networks.find((net) => net.id == translated)?.name
-          } (${translated})`
-        )
-        .addFields({ name: "CA", value: `\`${a}\``, inline: false }, ...fields)
-        .setColor("Blurple");
-      return interaction.reply({ embeds: [embed] });
-    } else {
-      return interaction.reply({
-        content: "Error looking up address",
-        ephemeral: true,
-      });
-    }
+    return interaction.reply({ content: "Content might be too big to display on embed, please check the file attached below.\nAs a reference, \"0\" in the JSON means `false` and \"1\" means `true`:", files: [jsonFile] });
+  } catch (e) {
+    return interaction.reply({ content: "Unknown error", ephemeral: true });
+  }
   },
 };
