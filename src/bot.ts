@@ -29,7 +29,7 @@ client.once(Events.ClientReady, async () => {
     console.log(client.user?.id);
 
     // we only have to call this every time a new command is made.
-    //await DeployCommands(client.user?.id);
+    // await DeployCommands(client.user?.id);
 });
 
 loadCommands().then(() => {
