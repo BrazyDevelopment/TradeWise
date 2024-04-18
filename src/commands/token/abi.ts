@@ -125,7 +125,7 @@ export default {
         }
 
         const embed = new EmbedBuilder()
-          .setTitle("Contract Approval Security")
+          .setTitle("ETH ABI")
           .setDescription(
             `**Network**: ${
               networks.find((net) => net.id == translated)?.name
