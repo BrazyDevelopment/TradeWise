@@ -25,12 +25,10 @@ export default {
         })
       );
 
-      console.log(response);
-
     const embed = new EmbedBuilder()
       .setTitle("Phishing Detector")
       .setDescription(`${(response.result.phishing_site == 1) ? "⚠️ :no_entry: This website is a **Phishing Site**, please refrain from using it!!" : "Passed test, we have no guarantee the site is still safe tho."}`)
-      .setColor("Blurple");
+      .setColor((response.result.phishing_site == 1) ? "Red" : "Blurple");
     return interaction.reply({ embeds: [embed] });
   },
 };
