@@ -5,6 +5,7 @@ import {
 } from "discord.js";
 import axios from "axios";
 import networks, { translateNetwork } from "../../utils/networks";
+import { file } from "bun";
 
 export default {
   data: new SlashCommandBuilder()
@@ -53,14 +54,16 @@ export default {
       const fields: { name: string; value: string; inline: boolean }[] =
         new Array();
 
-      for (const [key, value] of Object.entries(response.result)) {
-        const fieldValue = value === "1" || 1 ? "✅ Yes" : "❌ No";
-
-        fields.push({ name: key.charAt(0).toUpperCase()+key.slice(1).replaceAll("_", " "), value: fieldValue, inline: true });
-      }
-
-      if (response.result && response.result.risky_approval && response.result.risky_approval.risk) {
-        fields.push({ name: "Risk", value: `${response.result.risky_approval.risk}`, inline: false})
+      if (response.result) {
+        fields.push({ name: "Contract", value: response.result.is_contract == 1 ? "✅ Yes": "❌ No", inline: true});
+        fields.push({ name: "Open Source", value: response.result.is_contract == 1 ? "✅ Yes": "❌ No", inline: true});
+        fields.push({ name: "Blacklisted", value: response.result.contract_scan.blacklist == 1 ? "✅ Yes": "❌ No", inline: true});
+        fields.push({ name: "Approval Abuse", value: response.result.contract_scan == 1 ? "✅ Yes": "❌ No", inline: true});
+        fields.push({ name: "Risky", value: response.result.risky_approval == 1 ? "✅ Yes": "❌ No", inline: true });
+        fields.push({ name: "Doubt List", value: response.result.doubt_list == 1 ? "✅ Yes": "❌ No", inline: false});
+        if (response.result.risky_approval.risk) {
+          fields.push({ name: "Risk", value: response.result.risky_approval.risk, inline: false});
+        }
       }
 
       const embed = new EmbedBuilder()
